@@ -1,7 +1,37 @@
 var port = chrome.runtime.connect({name: "knockknock"});
 // port.onMessage.addListener(function(msg) {});
 
+const PLAY_ID = "player-bar-play-pause";
+let playBtnObserver = null;
+
+function startObserver(nodeId) {
+  if (playBtnObserver) return playBtnObserver;
+
+  const node = document.getElementById(nodeId);
+  if (node) {
+    const config = { attributes: true, childList: false };
+    const observer = new MutationObserver(mutationList => {
+      for (let mutation in mutationList) {
+        // Seems it doesn't happen
+        if (mutation.type === "attributes") {
+          port.postMessage({ mutation });
+        }
+      }
+      port.postMessage({ mutationList });
+    });
+    observer.observe(node, config);
+
+    return observer;
+  }
+
+  return null;
+}
+
 function runner() {
+  if (!playBtnObserver) {
+    playBtnObserver = startObserver(PLAY_ID);
+  }
+
   const TITLE_ID = "currently-playing-title";
   const ARTIST_ID = "player-artist";
   const ALBUM_CLASS = "player-album";
